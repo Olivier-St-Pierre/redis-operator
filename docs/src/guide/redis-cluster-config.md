@@ -200,3 +200,17 @@ Tolerations for nodes and pods in Kubernetes.
     value: "value1"
     effect: "NoSchedule"
 ```
+
+**sidecars**
+
+Sidecars for redis pods
+
+```yaml
+  sidecars:
+  - name: "sidecar1"
+    image: "image:1.0"
+    imagePullPolicy: Always
+    env:
+    - name: VAR_NAME
+      value: "value1"
+```
