@@ -47,11 +47,19 @@ type containerParameters struct {
 	PersistenceEnabled           *bool
 }
 
+type sidecarParameters struct {
+	Name            string
+	Image           string
+	ImagePullPolicy corev1.PullPolicy
+	Resources       *corev1.ResourceRequirements
+	EnvVars         *[]corev1.EnvVar
+}
+
 // CreateOrUpdateStateFul method will create or update Redis service
-func CreateOrUpdateStateFul(namespace string, stsMeta metav1.ObjectMeta, labels map[string]string, params statefulSetParameters, ownerDef metav1.OwnerReference, containerParams containerParameters) error {
+func CreateOrUpdateStateFul(namespace string, stsMeta metav1.ObjectMeta, labels map[string]string, params statefulSetParameters, ownerDef metav1.OwnerReference, containerParams containerParameters, sidecars []sidecarParameters) error {
 	logger := stateFulSetLogger(namespace, stsMeta.Name)
 	storedStateful, err := GetStateFulSet(namespace, stsMeta.Name)
-	statefulSetDef := generateStateFulSetsDef(stsMeta, labels, params, ownerDef, containerParams)
+	statefulSetDef := generateStateFulSetsDef(stsMeta, labels, params, ownerDef, containerParams, sidecars)
 	if err != nil {
 		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(statefulSetDef); err != nil {
 			logger.Error(err, "Unable to patch redis statefulset with comparison object")
@@ -92,7 +100,7 @@ func patchStateFulSet(storedStateful *appsv1.StatefulSet, newStateful *appsv1.St
 }
 
 // generateStateFulSetsDef generates the statefulsets definition of Redis
-func generateStateFulSetsDef(stsMeta metav1.ObjectMeta, labels map[string]string, params statefulSetParameters, ownerDef metav1.OwnerReference, containerParams containerParameters) *appsv1.StatefulSet {
+func generateStateFulSetsDef(stsMeta metav1.ObjectMeta, labels map[string]string, params statefulSetParameters, ownerDef metav1.OwnerReference, containerParams containerParameters, sidecarsParams []sidecarParameters) *appsv1.StatefulSet {
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta:   generateMetaInformation("StatefulSet", "apps/v1"),
 		ObjectMeta: stsMeta,
@@ -105,7 +113,7 @@ func generateStateFulSetsDef(stsMeta metav1.ObjectMeta, labels map[string]string
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					Containers:        generateContainerDef(stsMeta.Name, containerParams, params.EnableMetrics, params.ExternalConfig),
+					Containers:        generateContainerDef(stsMeta.Name, containerParams, params.EnableMetrics, params.ExternalConfig, sidecarsParams),
 					NodeSelector:      params.NodeSelector,
 					SecurityContext:   params.SecurityContext,
 					PriorityClassName: params.PriorityClassName,
@@ -163,7 +171,7 @@ func createPVCTemplate(name string, storageSpec corev1.PersistentVolumeClaim) co
 }
 
 // generateContainerDef generates container fefinition for Redis
-func generateContainerDef(name string, containerParams containerParameters, enableMetrics bool, externalConfig *string) []corev1.Container {
+func generateContainerDef(name string, containerParams containerParameters, enableMetrics bool, externalConfig *string, sidecars []sidecarParameters) []corev1.Container {
 	containerDefinition := []corev1.Container{
 		{
 			Name:            name,
@@ -180,6 +188,15 @@ func generateContainerDef(name string, containerParams containerParameters, enab
 	}
 	if enableMetrics {
 		containerDefinition = append(containerDefinition, enableRedisMonitoring(containerParams))
+	}
+	for i := 0; i < len(sidecars); i++ {
+		containerDefinition = append(containerDefinition, corev1.Container{
+			Name:            sidecars[i].Name,
+			Image:           sidecars[i].Image,
+			ImagePullPolicy: sidecars[i].ImagePullPolicy,
+			Resources:       *sidecars[i].Resources,
+			Env:             *sidecars[i].EnvVars,
+		})
 	}
 	return containerDefinition
 }
