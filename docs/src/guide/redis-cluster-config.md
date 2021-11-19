@@ -42,6 +42,7 @@ In this configuration section, we have these configuration parameters:-
 |`storageSpec` | {} | Storage configuration for redis setup |
 |`securityContext` | {} | Security Context for redis pods for changing system or kernel level parameters |
 |`tolerations` | [] | Tolerations for redis statefulset |
+|`sidecars` | [] | Sidecar for redis pods
 
 # CRD Parameters
 

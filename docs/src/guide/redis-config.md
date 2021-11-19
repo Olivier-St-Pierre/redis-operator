@@ -41,6 +41,7 @@ In this configuration section, we have these configuration parameters:-
 |`securityContext` | {} | Security Context for redis pods for changing system or kernel level parameters |
 |`affinity` | {} | Affinity for node and pod for redis statefulset |
 |`tolerations` | [] | Tolerations for redis statefulset |
+|`sidecars` | [] | Sidecar for redis pods
 
 # CRD Parameters
 
