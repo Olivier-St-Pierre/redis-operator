@@ -189,13 +189,13 @@ func generateContainerDef(name string, containerParams containerParameters, enab
 	if enableMetrics {
 		containerDefinition = append(containerDefinition, enableRedisMonitoring(containerParams))
 	}
-	for i := 0; i < len(sidecars); i++ {
-		containerDefinition = append(containerDefinition, corev1.Container{
-			Name:            sidecars[i].Name,
-			Image:           sidecars[i].Image,
-			ImagePullPolicy: sidecars[i].ImagePullPolicy,
-			Resources:       *sidecars[i].Resources,
-			Env:             *sidecars[i].EnvVars,
+	for _, sidecar := range sidecars {
+		sidecars = append(sidecars, sidecarParameters{
+			Name:            sidecar.Name,
+			Image:           sidecar.Image,
+			ImagePullPolicy: sidecar.ImagePullPolicy,
+			Resources:       sidecar.Resources,
+			EnvVars:         sidecar.EnvVars,
 		})
 	}
 	return containerDefinition
