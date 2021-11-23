@@ -58,7 +58,7 @@ type RedisExporter struct {
 type Sidecar struct {
 	Name            string                       `json:"name"`
 	Image           string                       `json:"image"`
-	Resources       *corev1.ResourceRequirements `json:"resources,omitempty"`
 	ImagePullPolicy corev1.PullPolicy            `json:"imagePullPolicy,omitempty"`
+	Resources       *corev1.ResourceRequirements `json:"resources,omitempty"`
 	EnvVars         *[]corev1.EnvVar             `json:"env,omitempty"`
 }
