@@ -188,7 +188,7 @@ func getRedisLabels(name, setupType, role string) map[string]string {
 }
 
 // generateSidecars generates Redis sidecar informations
-func generateClusterSidecars(cr *redisv1beta1.RedisCluster /*cr *redisv1beta1.Redis*/) []sidecarParameters {
+func generateClusterSidecars(cr *redisv1beta1.RedisCluster) []sidecarParameters {
 	sidecars := []sidecarParameters{}
 
 	if cr.Spec.Sidecars == nil {
