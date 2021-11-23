@@ -1,8 +1,9 @@
 package k8sutils
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	redisv1beta1 "redis-operator/api/v1beta1"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // RedisClusterSTS is a interface to call Redis Statefulset function
@@ -191,13 +192,13 @@ func generateClusterSidecars(cr *redisv1beta1.RedisCluster /*cr *redisv1beta1.Re
 	sidecars := []sidecarParameters{}
 
 	if cr.Spec.Sidecars != nil {
-		for i := 0; i < len(*cr.Spec.Sidecars); i++ {
+		for _, sidecar := range *cr.Spec.Sidecars {
 			sidecars = append(sidecars, sidecarParameters{
-				Name:            (*cr.Spec.Sidecars)[i].Name,
-				Image:           (*cr.Spec.Sidecars)[i].Image,
-				ImagePullPolicy: (*cr.Spec.Sidecars)[i].ImagePullPolicy,
-				Resources:       (*cr.Spec.Sidecars)[i].Resources,
-				EnvVars:         (*cr.Spec.Sidecars)[i].EnvVars,
+				Name:            sidecar.Name,
+				Image:           sidecar.Image,
+				ImagePullPolicy: sidecar.ImagePullPolicy,
+				Resources:       sidecar.Resources,
+				EnvVars:         sidecar.EnvVars,
 			})
 		}
 	}
