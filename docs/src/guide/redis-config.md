@@ -179,6 +179,13 @@ Sidecars for redis pods
   - name: "sidecar1"
     image: "image:1.0"
     imagePullPolicy: Always
+    resources:
+      limits:
+        cpu: 50m
+        memory: 64Mi
+      requests:
+        cpu: 10m
+        memory: 32M
     env:
     - name: VAR_NAME
       value: "value1"
