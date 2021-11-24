@@ -41,7 +41,7 @@ func CreateStandAloneRedis(cr *redisv1beta1.Redis) error {
 		generateRedisStandaloneParams(cr),
 		redisAsOwner(cr),
 		generateRedisStandaloneContainerParams(cr),
-		*cr.Spec.Sidecars,
+		generateSidecars(cr),
 	)
 	if err != nil {
 		logger.Error(err, "Cannot create standalone statefulset for Redis")
@@ -111,4 +111,22 @@ func generateRedisStandaloneContainerParams(cr *redisv1beta1.Redis) containerPar
 		containerProp.PersistenceEnabled = &trueProperty
 	}
 	return containerProp
+}
+
+// generateSidecars generates Redis sidecar informations
+func generateSidecars(cr *redisv1beta1.Redis) []sidecarParameters {
+	sidecars := []sidecarParameters{}
+
+	if cr.Spec.Sidecars != nil {
+		for _, sidecar := range *cr.Spec.Sidecars {
+			sidecars = append(sidecars, sidecarParameters{
+				Name:            sidecar.Name,
+				Image:           sidecar.Image,
+				ImagePullPolicy: sidecar.ImagePullPolicy,
+				Resources:       sidecar.Resources,
+				EnvVars:         sidecar.EnvVars,
+			})
+		}
+	}
+	return sidecars
 }
