@@ -147,7 +147,7 @@ func (service RedisClusterSTS) CreateRedisClusterSetup(cr *redisv1beta1.RedisClu
 		generateRedisClusterParams(cr, service.getReplicaCount(cr), service.ExternalConfig, service.Affinity),
 		redisClusterAsOwner(cr),
 		generateRedisClusterContainerParams(cr),
-		generateClusterSidecars(cr),
+		*cr.Spec.Sidecars,
 	)
 	if err != nil {
 		logger.Error(err, "Cannot create statefulset for Redis", "Setup.Type", service.RedisStateFulType)
@@ -185,23 +185,4 @@ func getRedisLabels(name, setupType, role string) map[string]string {
 		"redis_setup_type": setupType,
 		"role":             role,
 	}
-}
-
-// generateSidecars generates Redis sidecar informations
-func generateClusterSidecars(cr *redisv1beta1.RedisCluster) []sidecarParameters {
-	sidecars := []sidecarParameters{}
-
-	if cr.Spec.Sidecars == nil {
-		return sidecars
-	}
-	for _, sidecar := range *cr.Spec.Sidecars {
-		sidecars = append(sidecars, sidecarParameters{
-			Name:            sidecar.Name,
-			Image:           sidecar.Image,
-			ImagePullPolicy: sidecar.ImagePullPolicy,
-			Resources:       sidecar.Resources,
-			EnvVars:         sidecar.EnvVars,
-		})
-	}
-	return sidecars
 }

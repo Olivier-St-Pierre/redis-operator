@@ -2,6 +2,7 @@ package k8sutils
 
 import (
 	"context"
+	redisv1beta1 "redis-operator/api/v1beta1"
 	"sort"
 
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
@@ -47,16 +48,8 @@ type containerParameters struct {
 	PersistenceEnabled           *bool
 }
 
-type sidecarParameters struct {
-	Name            string
-	Image           string
-	ImagePullPolicy corev1.PullPolicy
-	Resources       *corev1.ResourceRequirements
-	EnvVars         *[]corev1.EnvVar
-}
-
 // CreateOrUpdateStateFul method will create or update Redis service
-func CreateOrUpdateStateFul(namespace string, stsMeta metav1.ObjectMeta, labels map[string]string, params statefulSetParameters, ownerDef metav1.OwnerReference, containerParams containerParameters, sidecars []sidecarParameters) error {
+func CreateOrUpdateStateFul(namespace string, stsMeta metav1.ObjectMeta, labels map[string]string, params statefulSetParameters, ownerDef metav1.OwnerReference, containerParams containerParameters, sidecars []redisv1beta1.Sidecar) error {
 	logger := stateFulSetLogger(namespace, stsMeta.Name)
 	storedStateful, err := GetStateFulSet(namespace, stsMeta.Name)
 	statefulSetDef := generateStateFulSetsDef(stsMeta, labels, params, ownerDef, containerParams, sidecars)
@@ -100,7 +93,7 @@ func patchStateFulSet(storedStateful *appsv1.StatefulSet, newStateful *appsv1.St
 }
 
 // generateStateFulSetsDef generates the statefulsets definition of Redis
-func generateStateFulSetsDef(stsMeta metav1.ObjectMeta, labels map[string]string, params statefulSetParameters, ownerDef metav1.OwnerReference, containerParams containerParameters, sidecarsParams []sidecarParameters) *appsv1.StatefulSet {
+func generateStateFulSetsDef(stsMeta metav1.ObjectMeta, labels map[string]string, params statefulSetParameters, ownerDef metav1.OwnerReference, containerParams containerParameters, sidecarsParams []redisv1beta1.Sidecar) *appsv1.StatefulSet {
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta:   generateMetaInformation("StatefulSet", "apps/v1"),
 		ObjectMeta: stsMeta,
@@ -171,7 +164,7 @@ func createPVCTemplate(name string, storageSpec corev1.PersistentVolumeClaim) co
 }
 
 // generateContainerDef generates container fefinition for Redis
-func generateContainerDef(name string, containerParams containerParameters, enableMetrics bool, externalConfig *string, sidecars []sidecarParameters) []corev1.Container {
+func generateContainerDef(name string, containerParams containerParameters, enableMetrics bool, externalConfig *string, sidecars []redisv1beta1.Sidecar) []corev1.Container {
 	containerDefinition := []corev1.Container{
 		{
 			Name:            name,
