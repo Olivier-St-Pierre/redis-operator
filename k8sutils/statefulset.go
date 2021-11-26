@@ -49,10 +49,10 @@ type containerParameters struct {
 }
 
 // CreateOrUpdateStateFul method will create or update Redis service
-func CreateOrUpdateStateFul(namespace string, stsMeta metav1.ObjectMeta, labels map[string]string, params statefulSetParameters, ownerDef metav1.OwnerReference, containerParams containerParameters, sidecars []redisv1beta1.Sidecar) error {
+func CreateOrUpdateStateFul(namespace string, stsMeta metav1.ObjectMeta, labels map[string]string, params statefulSetParameters, ownerDef metav1.OwnerReference, containerParams containerParameters, sidecars *[]redisv1beta1.Sidecar) error {
 	logger := stateFulSetLogger(namespace, stsMeta.Name)
 	storedStateful, err := GetStateFulSet(namespace, stsMeta.Name)
-	statefulSetDef := generateStateFulSetsDef(stsMeta, labels, params, ownerDef, containerParams, sidecars)
+	statefulSetDef := generateStateFulSetsDef(stsMeta, labels, params, ownerDef, containerParams, getSidecars(sidecars))
 	if err != nil {
 		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(statefulSetDef); err != nil {
 			logger.Error(err, "Unable to patch redis statefulset with comparison object")
@@ -93,7 +93,7 @@ func patchStateFulSet(storedStateful *appsv1.StatefulSet, newStateful *appsv1.St
 }
 
 // generateStateFulSetsDef generates the statefulsets definition of Redis
-func generateStateFulSetsDef(stsMeta metav1.ObjectMeta, labels map[string]string, params statefulSetParameters, ownerDef metav1.OwnerReference, containerParams containerParameters, sidecarsParams []redisv1beta1.Sidecar) *appsv1.StatefulSet {
+func generateStateFulSetsDef(stsMeta metav1.ObjectMeta, labels map[string]string, params statefulSetParameters, ownerDef metav1.OwnerReference, containerParams containerParameters, sidecars []redisv1beta1.Sidecar) *appsv1.StatefulSet {
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta:   generateMetaInformation("StatefulSet", "apps/v1"),
 		ObjectMeta: stsMeta,
@@ -106,7 +106,7 @@ func generateStateFulSetsDef(stsMeta metav1.ObjectMeta, labels map[string]string
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					Containers:        generateContainerDef(stsMeta.Name, containerParams, params.EnableMetrics, params.ExternalConfig, sidecarsParams),
+					Containers:        generateContainerDef(stsMeta.Name, containerParams, params.EnableMetrics, params.ExternalConfig, sidecars),
 					NodeSelector:      params.NodeSelector,
 					SecurityContext:   params.SecurityContext,
 					PriorityClassName: params.PriorityClassName,
@@ -183,13 +183,18 @@ func generateContainerDef(name string, containerParams containerParameters, enab
 		containerDefinition = append(containerDefinition, enableRedisMonitoring(containerParams))
 	}
 	for _, sidecar := range sidecars {
-		containerDefinition = append(containerDefinition, corev1.Container{
+		container := corev1.Container{
 			Name:            sidecar.Name,
 			Image:           sidecar.Image,
 			ImagePullPolicy: sidecar.ImagePullPolicy,
-			Resources:       *sidecar.Resources,
-			Env:             *sidecar.EnvVars,
-		})
+		}
+		if sidecar.Resources != nil {
+			container.Resources = *sidecar.Resources
+		}
+		if sidecar.EnvVars != nil {
+			container.Env = *sidecar.EnvVars
+		}
+		containerDefinition = append(containerDefinition, container)
 	}
 	return containerDefinition
 }
@@ -320,4 +325,11 @@ func GetStateFulSet(namespace string, stateful string) (*appsv1.StatefulSet, err
 func stateFulSetLogger(namespace string, name string) logr.Logger {
 	reqLogger := log.WithValues("Request.StateFulSet.Namespace", namespace, "Request.StateFulSet.Name", name)
 	return reqLogger
+}
+
+func getSidecars(sidecars *[]redisv1beta1.Sidecar) []redisv1beta1.Sidecar {
+	if sidecars == nil {
+		return []redisv1beta1.Sidecar{}
+	}
+	return *sidecars
 }

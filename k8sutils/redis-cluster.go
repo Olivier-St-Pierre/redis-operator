@@ -147,7 +147,7 @@ func (service RedisClusterSTS) CreateRedisClusterSetup(cr *redisv1beta1.RedisClu
 		generateRedisClusterParams(cr, service.getReplicaCount(cr), service.ExternalConfig, service.Affinity),
 		redisClusterAsOwner(cr),
 		generateRedisClusterContainerParams(cr),
-		*cr.Spec.Sidecars,
+		cr.Spec.Sidecars,
 	)
 	if err != nil {
 		logger.Error(err, "Cannot create statefulset for Redis", "Setup.Type", service.RedisStateFulType)
